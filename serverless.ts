@@ -9,6 +9,8 @@ const serverlessConfiguration: AWS = {
   provider: {
     name: "aws",
     runtime: "nodejs14.x",
+    stage: "dev",
+    region: "eu-west-1",
     apiGateway: {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
@@ -23,6 +25,37 @@ const serverlessConfiguration: AWS = {
   functions: { hello },
   package: { individually: true },
   custom: {
+    region: "${opt:region, self:provider.region}",
+    stage: "${opt:stage, self:provider.stage}",
+    list_table: "${self:service}-list-table-${opt:stage, self:provider.stage}",
+    tasks_table:
+      "${self:service}-tasks-table-${opt:stage, self:provider.stage}",
+    table_throughputs: {
+      prod: 5,
+      default: 1,
+    },
+    table_throughput:
+      "${self:custom.TABLE_THROUGHPUTS.${self:custom.stage}, self:custom.table_throughputs.default}",
+    dynamodb: {
+      stages: ["dev"],
+      start: {
+        port: 8008,
+        inMemory: true,
+        heapInitial: "200m",
+        heapMax: "1g",
+        migrate: true,
+        seed: true,
+        convertEmptyValues: true,
+        // Uncomment only if you already have a DynamoDB running locally
+        // noStart: true
+      },
+    },
+    ["serverless-offline"]: {
+      httpPort: 3000,
+      babelOptions: {
+        presets: ["env"],
+      },
+    },
     esbuild: {
       bundle: true,
       minify: false,
